@@ -19,6 +19,15 @@ import zipfile
 from tqdm import tqdm
 import logging
 
+# Fix for newer torchvision versions - must be applied before importing GFPGAN/BasicSR
+if 'torchvision.transforms.functional_tensor' not in sys.modules:
+    try:
+        import torchvision.transforms.functional as F
+        sys.modules['torchvision.transforms.functional_tensor'] = F
+        print("Applied torchvision compatibility patch")
+    except ImportError:
+        pass  # torchvision not installed yet
+
 
 class VideoRefiner:
     def __init__(self, 
@@ -579,12 +588,6 @@ class VideoRefiner:
     def _enhance_faces(self, input_dir: Path, output_dir: Path) -> bool:
         """Enhance faces in frames using GFPGAN."""
         try:
-            # Fix for newer torchvision versions
-            import sys
-            if 'torchvision.transforms.functional_tensor' not in sys.modules:
-                import torchvision.transforms.functional as F
-                sys.modules['torchvision.transforms.functional_tensor'] = F
-            
             # Import GFPGAN (assuming it's installed)
             from gfpgan import GFPGANer
             import cv2

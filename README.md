@@ -1,6 +1,69 @@
 # Video Refiner
 
-Advanced video post-processing tool for AI-generated videos (WAN 2.1 and others). Combines multiple state-of-the-art techniques for video enhancement.
+Advanced post-processing tool for AI-generated videos using Real-ESRGAN, GFPGAN, and RIFE.
+
+## Requirements
+
+- Python 3.11+ (3.11.12 recommended)
+- macOS (Apple Silicon supported)
+- ffmpeg
+
+## Setup
+
+### Option 1: Use the pre-configured environment
+
+```bash
+# Activate the Python 3.11 environment with all dependencies
+source activate.sh
+
+# Setup models (first time only)
+python video_refiner.py --setup
+```
+
+### Option 2: Create your own environment
+
+```bash
+# Create Python 3.11 virtual environment
+python3.11 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Setup models
+python video_refiner.py --setup
+```
+
+## Fixed Issues
+
+✅ **GFPGAN Compatibility**: Resolved conflicting "GFPGAN setup complete" vs "WARNING - GFPGAN not installed" messages
+
+✅ **Python 3.12 Compatibility**: Updated to Python 3.11 to avoid numpy/setuptools conflicts
+
+✅ **Torchvision Compatibility**: Added automatic patch for `torchvision.transforms.functional_tensor` import issues
+
+## Usage
+
+```bash
+# Process a single video
+python video_refiner.py input.mp4 -o output.mp4 --upscale 4 --face --interpolate 2
+
+# Batch process multiple videos
+python video_refiner.py videos/*.mp4 -o refined/ --upscale 2
+
+# Upscale only (no face enhancement or interpolation)
+python video_refiner.py video.mp4 -o upscaled.mp4 --upscale 4 --no-face --no-interpolate
+```
+
+## Package Versions
+
+The requirements.txt has been updated with compatible versions:
+- Python 3.11.12
+- PyTorch 2.7.1
+- Torchvision 0.22.1
+- GFPGAN 1.3.8
+- All other dependencies updated to latest compatible versions
 
 ## Features
 
@@ -10,60 +73,7 @@ Advanced video post-processing tool for AI-generated videos (WAN 2.1 and others)
 - **Batch Processing**: Process multiple videos in parallel
 - **Apple Silicon Optimized**: Automatically uses Metal Performance Shaders on M-series Macs
 
-## Requirements
-
-- macOS (tested on M4 Pro with 24GB RAM)
-- Python 3.8+
-- ffmpeg (install via Homebrew: `brew install ffmpeg`)
-
-## Installation
-
-1. Clone or download this repository:
-```bash
-cd /Users/jk/training/video
-```
-
-2. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Download models and binaries (one-time setup):
-```bash
-python video_refiner.py --setup
-```
-
-This will download:
-- Real-ESRGAN models and binaries (~100MB)
-- GFPGAN face restoration model (~350MB)
-- RIFE frame interpolation models (~50MB)
-
-## Usage
-
-### Basic Usage
-
-Process a single video with default settings (4x upscale, face enhancement, 2x interpolation):
-```bash
-python video_refiner.py input.mp4 -o output.mp4
-```
-
-### Advanced Options
-
-```bash
-# Upscale only (no face enhancement or interpolation)
-python video_refiner.py input.mp4 -o output.mp4 --upscale 4 --no-face --no-interpolate
-
-# Maximum quality (8x upscale, face enhancement, 4x interpolation)
-python video_refiner.py input.mp4 -o output.mp4 --upscale 8 --interpolate 4
-
-# Batch process all MP4 files in a directory
-python video_refiner.py videos/*.mp4 -o refined/
-
-# Custom FPS extraction (useful for high frame rate videos)
-python video_refiner.py input.mp4 -o output.mp4 --fps 60
-```
-
-### Command Line Options
+## Command Line Options
 
 - `input`: Input video file(s) or pattern (supports wildcards)
 - `-o, --output`: Output file path (single video) or directory (batch)
@@ -76,72 +86,16 @@ python video_refiner.py input.mp4 -o output.mp4 --fps 60
 - `--models-dir`: Directory for downloaded models (default: ./models)
 - `--device`: Processing device (auto, cpu, or mps; default: auto)
 
-## Processing Pipeline
-
-1. **Frame Extraction**: Uses ffmpeg to extract frames as lossless PNG images
-2. **Upscaling**: Applies Real-ESRGAN for high-quality upscaling
-3. **Face Enhancement**: Detects and enhances faces using GFPGAN
-4. **Frame Interpolation**: Generates intermediate frames using RIFE
-5. **Video Compilation**: Reassembles frames into final video with H.264 encoding
-
-## Performance Tips
-
-- The tool automatically uses all available CPU cores for parallel processing
-- On Apple Silicon Macs, GPU acceleration is used when available
-- Processing time depends on video resolution, length, and selected enhancements
-- Typical processing: ~2-5 minutes per minute of 1080p video with 4x upscaling
-
 ## Troubleshooting
 
-### "ffmpeg not found" error
-Install ffmpeg using Homebrew:
-```bash
-brew install ffmpeg
-```
+If you see torchvision import errors, the script will automatically apply a compatibility patch. This is normal and expected.
 
-### Model download fails
-1. Check your internet connection
-2. Try running setup again: `python video_refiner.py --setup`
-3. Models are downloaded to `./models` directory by default
+### Common Issues
 
-### Out of memory errors
-- Reduce upscaling factor
-- Process shorter video segments
-- Close other applications to free up RAM
-
-### GFPGAN import error
-Ensure all requirements are installed:
-```bash
-pip install -r requirements.txt
-```
-
-## Examples
-
-### Quick Test
-```bash
-# Download a sample video (optional)
-# Process with default settings
-python video_refiner.py sample.mp4 -o enhanced.mp4
-```
-
-### Production Pipeline
-```bash
-# High quality processing for final output
-python video_refiner.py raw_video.mp4 -o final_video.mp4 --upscale 4 --interpolate 2
-```
-
-### Batch Processing
-```bash
-# Process all videos in a folder
-python video_refiner.py /path/to/videos/*.mp4 -o /path/to/output/
-```
-
-## Notes
-
-- Input videos are not modified; always outputs to a new file
-- Supports common video formats: MP4, AVI, MOV, MKV
-- Output is always MP4 with H.264 encoding for compatibility
-- Temporary files are automatically cleaned up after processing
+- **"ffmpeg not found"**: Install with `brew install ffmpeg`
+- **GFPGAN import errors**: Use Python 3.11 and the updated requirements.txt
+- **Model download fails**: Check internet connection and retry `--setup`
+- **Out of memory**: Reduce upscaling factor or process shorter segments
 
 ## License
 
